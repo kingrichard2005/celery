@@ -1,4 +1,11 @@
 from __future__ import absolute_import
+
+# Local time zone for this installation. Choices can be found here:
+# http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
+# although not all choices may be available on all operating systems.
+# In a Windows environment this must be set to your system time zone.
+TIME_ZONE = 'America/Chicago'
+
 # ^^^ The above is required if you want to import from the celery
 # library.  If you don't have this then `from celery.schedules import`
 # becomes `proj.celery.schedules` in Python 2.x since it allows
@@ -11,6 +18,14 @@ BROKER_URL = 'amqp://guest:guest@localhost//'
 #: Only add pickle to this list if your broker is secured
 #: from unwanted access (see userguide/security.html)
 CELERY_ACCEPT_CONTENT = ['json']
+
+#me
+import logging.config
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_RESULT_BACKEND = 'amqp'
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_ENABLE_UTC=True
 
 # Django settings for proj project.
 
@@ -25,23 +40,20 @@ MANAGERS = ADMINS
 
 DATABASES = {
     'default': {
-        # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'test.db',  # path to database file if using sqlite3.
-        'USER': '',        # Not used with sqlite3.
-        'PASSWORD': '',    # Not used with sqlite3.
-        'HOST': '',        # Set to empty string for localhost.
-                           # Not used with sqlite3.
-        'PORT': '',        # Set to empty string for default.
-                           # Not used with sqlite3.
+        # Add "postgresql_psycopg2", "mysql", "sqlite3" or "oracle".
+        "ENGINE": "django.db.backends.postgresql_psycopg2",
+        # DB name or path to database file if using sqlite3.
+        "NAME": "celerytest",
+        # Not used with sqlite3.
+        "USER": "postgres",
+        # Not used with sqlite3.
+        "PASSWORD": "",
+        # Set to empty string for localhost. Not used with sqlite3.
+        "HOST": "",
+        # Set to empty string for default. Not used with sqlite3.
+        "PORT": "",
     }
 }
-
-# Local time zone for this installation. Choices can be found here:
-# http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
-# although not all choices may be available on all operating systems.
-# In a Windows environment this must be set to your system time zone.
-TIME_ZONE = 'America/Chicago'
 
 # Language code for this installation. All choices can be found here:
 # http://www.i18nguy.com/unicode/language-identifiers.html
@@ -148,6 +160,12 @@ INSTALLED_APPS = (
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+      'standard': {
+           'format': '%(asctime)s %(levelname)s [%(name)s: %(lineno)s] -- %(message)s',
+           'datefmt': '%Y-%m-%d\t%H:%M:%S\t',
+          },
+    },
     'filters': {
         'require_debug_false': {
             '()': 'django.utils.log.RequireDebugFalse'
@@ -158,12 +176,23 @@ LOGGING = {
             'level': 'ERROR',
             'filters': ['require_debug_false'],
             'class': 'django.utils.log.AdminEmailHandler'
+        },'demoapp.tasks.AddTask': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': 'AddTask.log',
+            'maxBytes': 1024*1024*5,
+            'backupCount': 3,
+            'formatter': 'standard'
         }
     },
     'loggers': {
         'django.request': {
             'handlers': ['mail_admins'],
             'level': 'ERROR',
+            'propagate': True,
+        },'demoapp.tasks.AddTask': {
+            'handlers': ['demoapp.tasks.AddTask'],
+            'level': 'INFO',
             'propagate': True,
         },
     }
